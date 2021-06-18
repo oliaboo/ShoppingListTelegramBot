@@ -1,7 +1,19 @@
 import telebot
+import flask
+import time
 
 API_TOKEN = "1751213583:AAE4zt3Ql-cF9eTQKWlEfKrv9PLuymyuH9Y"
 shopping_bot = telebot.TeleBot(API_TOKEN)
+
+
+app = flask.Flask(__name__)
+
+WEBHOOK_HOST = '7776c2448c83.ngrok.io'
+WEBHOOK_PORT = 8443  # 443, 80, 88 or 8443 (port need to be 'open')
+WEBHOOK_LISTEN = '0.0.0.0'  # In some VPS you may need to put here the IP addr
+
+WEBHOOK_URL_BASE = "https://%s" % WEBHOOK_HOST
+WEBHOOK_URL_PATH = "/%s/" % API_TOKEN
 
 
 commands = ["Add to list", "Get from list", "Remove from list"]
@@ -11,6 +23,24 @@ keyboard.row(*commands)
 
 # {<chat_id>: [shopping_list, current_operation, last_message_id]}
 user_data = {}
+
+
+@app.route('/', methods=['GET', 'HEAD'])
+def index():
+    print("index")
+    return 'hi!'
+
+
+# Process webhook calls
+@app.route(WEBHOOK_URL_PATH, methods=['POST'])
+def webhook():
+    if flask.request.headers.get('content-type') == 'application/json':
+        json_string = flask.request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        shopping_bot.process_new_updates([update])
+        return ''
+    else:
+        flask.abort(403)
 
 
 @shopping_bot.message_handler(commands=["start"])
@@ -60,4 +90,11 @@ def callback_handler(call):
     shopping_bot.edit_message_reply_markup(call.message.chat.id, user_data[call.message.chat.id][2], reply_markup=inline_kb)
 
 
-shopping_bot.polling()
+# shopping_bot.polling()
+shopping_bot.remove_webhook()
+time.sleep(0.1)
+
+# Set webhook
+shopping_bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH)
+
+app.run(host="localhost", port=8443)
