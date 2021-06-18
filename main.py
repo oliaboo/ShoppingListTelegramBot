@@ -2,7 +2,7 @@ import telebot
 import flask
 import time
 
-API_TOKEN = "1751213583:AAE4zt3Ql-cF9eTQKWlEfKrv9PLuymyuH9Y"
+API_TOKEN = "<your token>"
 shopping_bot = telebot.TeleBot(API_TOKEN)
 
 
